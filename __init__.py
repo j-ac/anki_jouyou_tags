@@ -83,3 +83,14 @@ def apply_tags_to_new_note(col, note, deck_id):
     apply_tags_to_note(note, needs_flush=False)  # new notes do not exist in the DB so flushing is meaningless.
 
 anki.hooks_gen.note_will_be_added.append(apply_tags_to_new_note)
+
+# =============================
+# === CHANGE TAGS ON MODIFY ===
+# =============================
+#def update_tags_on_modified_note(note: anki.notes.Note):
+    #print("invoked")
+    #remove_jouyou_tags(note)  # if a grade S kanji is removed for instance, then the tag will be removed as well.
+    #apply_tags_to_note(note, needs_flush=True)
+
+
+#anki.hooks_gen.note_will_flush.append(update_tags_on_modified_note)
