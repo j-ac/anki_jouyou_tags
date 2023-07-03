@@ -55,4 +55,22 @@ qconnect(action.triggered, add_tags)  # set it to call add_tags when it's clicke
 mw.form.menuTools.addAction(action)  # adds it to the tools menu
 
 
+# ===================================
+# === TAG-AT-INSERT FUNCTIONALITY ===
+# ===================================
+
+# Required arguments appear as args=[...] in the hook definition
+# In this case note_will_be_added within anki/pylib/tools/genhooks.py
+def apply_tags_to_new_note(col, note, deck_id):
+    kanji_field = note.__getitem__(user_config['field'])
+    for character in kanji_field:
+        grade_level = jouyou_grades.grades.get(character)
+        if grade_level is None:  # kana, non-jouyou, romaji etc
+            continue
+
+        note.add_tag("Jouyou_{}".format(grade_level))
+    #note.flush()  # No flush necesary, as the note doesn't exist yet
+
+
+anki.hooks_gen.note_will_be_added.append(apply_tags_to_new_note)
 
