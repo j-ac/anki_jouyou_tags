@@ -20,38 +20,56 @@ from . import jouyou_grades  # To import files in the same directory
 from anki.hooks_gen import note_will_be_added
 
 user_config = mw.addonManager.getConfig(__name__)  # creates a dictionary from the directory's config.json
+possible_tags = ["jouyou_1", "jouyou_2", "jouyou_3", "jouyou_4", "jouyou_5", "jouyou_6", "jouyou_S"]
 
 
-# =================================
-# === TOOLBOX APPLY TAGS OPTION ===
-# =================================
-def add_tags() -> None:
+# ========================
+# === HELPER FUNCTIONS ===
+# ========================
+def apply_tags_to_note(note: anki.notes.Note, needs_flush: bool):
+    num_tags = 0
+    kanji_field = (note.__getitem__(user_config['field']))
+    for character in kanji_field:
+        grade_level = jouyou_grades.grades.get(character)
+        if grade_level is None:  # kana, non-jouyou, romaji etc
+            continue
+
+        num_tags += 1
+        note.add_tag("Jouyou_{}".format(grade_level))
+
+    if (needs_flush):
+        note.flush()  # You must flush each note you affect for changes to stick.
+    return num_tags
+
+
+# Remove all jouyou tags from a note
+def remove_jouyou_tags(note: anki.notes.Note):
+    for tag in possible_tags:
+        note.remove_tag(tag)
+
+
+# ===================================
+# === APPLY TAGS IN DROPDOWN MENU ===
+# ===================================
+def add_tags_to_all() -> None:
     deck_id = mw.col.decks.id_for_name(
-        user_config['deck'])  # camelCase is deprecated, but still used in official examples
+        user_config['deck'])  # camelCase functions are deprecated, but still used in official examples
     cids = mw.col.decks.cids(did=deck_id)  # Card IDs
 
     num_applied_tags = 0
     num_notes = 0
     for c in cids:
         note = mw.col.get_card(c).note()
-        kanji_field = (note.__getitem__(user_config['field']))
-        for character in kanji_field:
-            grade_level = jouyou_grades.grades.get(character)
-            if grade_level is None:  # kana, non-jouyou, romaji etc
-                continue
-
-            num_applied_tags += 1
-            note.add_tag("Jouyou_{}".format(grade_level))
-
+        remove_jouyou_tags(note)
+        num_applied_tags += apply_tags_to_note(note, needs_flush=True)
         num_notes += 1
-        note.flush()  # You must flush each note you affect for changes to stick.
 
     showInfo(f"Deck now has {num_applied_tags} tags applied to {num_notes} notes in \"{user_config['deck']}\".")
 
 
 # These lines are basically the same as those in https://addon-docs.ankiweb.net/a-basic-addon.html
 action = QAction("Apply Jouyou Grade Tags", mw)
-qconnect(action.triggered, add_tags)  # set it to call add_tags when it's clicked
+qconnect(action.triggered, add_tags_to_all)  # set it to call add_tags when it's clicked
 mw.form.menuTools.addAction(action)  # adds it to the tools menu
 
 
@@ -62,15 +80,6 @@ mw.form.menuTools.addAction(action)  # adds it to the tools menu
 # Required arguments appear as args=[...] in the hook definition
 # In this case note_will_be_added within anki/pylib/tools/genhooks.py
 def apply_tags_to_new_note(col, note, deck_id):
-    kanji_field = note.__getitem__(user_config['field'])
-    for character in kanji_field:
-        grade_level = jouyou_grades.grades.get(character)
-        if grade_level is None:  # kana, non-jouyou, romaji etc
-            continue
-
-        note.add_tag("Jouyou_{}".format(grade_level))
-    #note.flush()  # No flush necesary, as the note doesn't exist yet
-
+    apply_tags_to_note(note, needs_flush=False)  # new notes do not exist in the DB so flushing is meaningless.
 
 anki.hooks_gen.note_will_be_added.append(apply_tags_to_new_note)
-
