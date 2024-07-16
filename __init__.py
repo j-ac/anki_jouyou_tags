@@ -8,13 +8,9 @@
 # and reading others' code is the only way to understand many things.
 # I hope my plugin helps you make yours.
 
-from anki.lang import _
 from aqt import mw
 from aqt.utils import showInfo, qconnect
 from aqt.qt import *
-from anki.collection import *
-# from aqt.qt import debug
-from anki.decks import *
 from anki.cards import *
 from . import jouyou_grades  # To import files in the same directory
 from anki.hooks_gen import note_will_be_added
@@ -37,7 +33,7 @@ def apply_tags_to_note(note: anki.notes.Note, needs_flush: bool):
         num_tags += 1
         note.add_tag("Jouyou_{}".format(grade_level))
 
-    if (needs_flush):
+    if needs_flush:
         note.flush()  # You must flush each note you affect for changes to stick.
     return num_tags
 
@@ -82,4 +78,17 @@ mw.form.menuTools.addAction(action)  # adds it to the tools menu
 def apply_tags_to_new_note(col, note, deck_id):
     apply_tags_to_note(note, needs_flush=False)  # new notes do not exist in the DB so flushing is meaningless.
 
+
 anki.hooks_gen.note_will_be_added.append(apply_tags_to_new_note)
+
+# EXPERIMENTAL
+# =============================
+# === CHANGE TAGS ON MODIFY ===
+# =============================
+# def update_tags_on_modified_note(note: anki.notes.Note):
+# print("invoked")
+# remove_jouyou_tags(note)  # if a grade S kanji is removed for instance, then the tag will be removed as well.
+# apply_tags_to_note(note, needs_flush=True)
+
+
+# anki.hooks_gen.note_will_flush.append(update_tags_on_modified_note)
