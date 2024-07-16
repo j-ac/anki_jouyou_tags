@@ -9,14 +9,14 @@
 # I hope my plugin helps you make yours.
 
 from aqt import mw
-from aqt.utils import showInfo, qconnect
+from aqt.utils import showInfo
 from aqt.qt import *
 from anki.cards import *
 from . import jouyou_grades  # To import files in the same directory
 from anki.hooks_gen import note_will_be_added
 
 user_config = mw.addonManager.getConfig(__name__)  # creates a dictionary from the directory's config.json
-possible_tags = ["jouyou_1", "jouyou_2", "jouyou_3", "jouyou_4", "jouyou_5", "jouyou_6", "jouyou_S"]
+possible_tags = ["jouyou_1", "jouyou_2", "jouyou_3", "jouyou_4", "jouyou_5", "jouyou_6", "jouyou_S, Jinmeiyou-only"]
 
 
 # ========================
@@ -24,14 +24,17 @@ possible_tags = ["jouyou_1", "jouyou_2", "jouyou_3", "jouyou_4", "jouyou_5", "jo
 # ========================
 def apply_tags_to_note(note: anki.notes.Note, needs_flush: bool):
     num_tags = 0
-    kanji_field = (note.__getitem__(user_config['field']))
+    kanji_field = note[user_config['field']]
     for character in kanji_field:
         grade_level = jouyou_grades.grades.get(character)
         if grade_level is None:  # kana, non-jouyou, romaji etc
             continue
 
         num_tags += 1
-        note.add_tag("Jouyou_{}".format(grade_level))
+        if grade_level == "Jinmeiyou":
+            note.add_tag("Jinmeiyou-only")
+        else:
+            note.add_tag(f"Jouyou_{grade_level}")
 
     if needs_flush:
         note.flush()  # You must flush each note you affect for changes to stick.
